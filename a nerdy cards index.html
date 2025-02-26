@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nerdí Karty proti lidskosti</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #1a1a1a;
+            margin: 0;
+            padding: 20px;
+            color: #00ff00;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #00ff00;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px #00ff00;
+        }
+        .button-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        button {
+            background-color: #333;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        button:hover {
+            background-color: #00ff00;
+            color: #333;
+            box-shadow: 0 0 15px #00ff00;
+        }
+        .cards-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+        .black-card-container, .white-cards-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            justify-content: center;
+        }
+        .card {
+            width: 200px;
+            height: 280px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            box-sizing: border-box;
+            text-align: center;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            transition: all 0.3s;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .black-card {
+            background-color: #000;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+        }
+        .white-card {
+            background-color: #333;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+        }
+        .section-title {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 18px;
+            color: #00ff00;
+        }
+        .rules {
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+            border: 1px solid #00ff00;
+        }
+        .rules h2 {
+            text-align: center;
+            margin-top: 0;
+            color: #00ff00;
+        }
+        #combinedTextContainer {
+            padding: 20px;
+            margin: 20px auto;
+            background-color: #222;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            font-size: 18px;
+            text-align: center;
+            max-width: 90%;
+            display: none;
+        }
+        @media (max-width: 600px) {
+            .card {
+                width: 160px;
+                height: 220px;
+                font-size: 14px;
+            }
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px rgba(0, 255, 0, 0.4); }
+            50% { box-shadow: 0 0 25px rgba(0, 255, 0, 0.7); }
+            100% { box-shadow: 0 0 15px rgba(0, 255, 0, 0.4); }
+        }
+        #loading {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
+            color: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Nerdí Karty proti lidskosti</h1>
+        
+        <div class="rules">
+            <h2>Jak to funguje</h2>
+            <p>1. Klikni na tlačítko <strong>"Rozdej karty"</strong> pro zobrazení jedné černé a pěti bílých karet.</p>
+            <p>2. Klikni na některou z <strong>bílých karet</strong>, která podle tebe nejlépe doplňuje černou kartu.</p>
+            <p>3. Nad černou kartou se zobrazí <strong>kombinovaný text</strong> vytvořený z obou karet.</p>
+            <p>4. Pro novou sadu karet znovu klikni na tlačítko <strong>"Rozdej karty"</strong>.</p>
+        </div>
+        
+        <div class="button-container">
+            <button id="dealButton">Rozdej karty</button>
+        </div>
+        
+        <div id="loading" style="display: none;">Načítám karty...</div>
+        
+        <div class="cards-container">
+            <div id="combinedTextContainer"></div>
+            
+            <div class="section-title">Černá karta:</div>
+            <div id="blackCardContainer" class="black-card-container"></div>
+            
+            <div class="section-title">Tvoje bílé karty:</div>
+            <div id="whiteCardsContainer" class="white-cards-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // Karty budou načteny z JSON
+        var blackCards = [];
+        var whiteCards = [];
+        
+        // JSON s kartami
+        var cardsData = {
+            "blackCards": [
+                "Moji HC Diablo postavu zabil __________.",
+                "Pád celého serveru způsobil __________.",
+                "Na Comic-Conu jsem získal __________.",
+                "Hacknout NASA mi pomohl __________.",
+                "Na pracovním PC bys neměl googlit __________.",
+                "Kdybych byl superpadouch, moje zbraň hromadného ničení by byla __________.",
+                "Nejhorší cosplay, který jsem kdy viděl, byl __________.",
+                "Při LARPu jsem svým spoluhráčům překvapivě nabídl __________.",
+                "Nová expanze pro Dungeons & Dragons: 'Jeskyně a __________'.",
+                "Správný Jedi by využil sílu, aby získal __________.",
+                "Star Treku dokáže vdechnout nový život jen __________.",
+                "Vývojáři počítačových her nyní přidávají __________.",
+                "Můj oblíbený Easter egg v Minecraftu je __________.",
+                "Tajemství úspěchu Elona Muska? __________.",
+                "Další generace umělé inteligence bude schopna generovat __________.",
+                "Na tajné konferenci CERN vědci konečně objevili __________.",
+                "Nejnovější update Windows fatálně selhal kvůli __________."
+            ],
+            "whiteCards": [
+                "Osamělý programátor závislý na pornografii",
+                "Kritický zásah do pipíka",
+                "Katana zakoupená na AliExpressu",
+                "Nelegální meme o nedovolených tématech",
+                "Notorický Grammar Nazi",
+                "Anime body pillow se Sasukem",
+                "Přiznání, že jsi nikdy neviděl Star Wars",
+                "Masturbace na hentai během pracovní schůzky",
+                "Sbírka dračích dild z Bad Dragon",
+                "Špinavé fetiše o které se s nikým nedělíš",
+                "Extrémně nadměrná spotřeba hentai",
+                "Incel vychvalující japonské ženy",
+                "Třítýdenní gaming session bez sprchy",
+                "Výmluva jenom jsem zkoumal po nalezení divného porna",
+                "Hromada použitých kapesníků pod postelí",
+                "Kolekce figurek s podezřelými skvrnami",
+                "Sexuální fantazie o anime postavách",
+                "Nedostatek základní hygieny na herním sjezdu",
+                "Naprostá absence jakéhokoliv sexuálního života",
+                "Ejakulace při kritickém zásahu ve hře",
+                "Neschopnost mluvit s osobami opačného pohlaví",
+                "Třicetiletý panic v tričku z anime",
+                "Sbírka pochybných doujinshi v telefonu",
+                "Zpocené ruce při rozbalování nových figurek",
+                "Zakázané modifikace Skyrima",
+                "Otylý cosplayer v příliš malém kostýmu",
+                "Bronie s nevhodným obrázkem na pracovním laptopu",
+                "Poslední zbytky lidské důstojnosti",
+                "Komentář actually pod každým příspěvkem na Redditu",
+                "Vyhnanství do friend-zóny",
+                "Discord server plný pochybného obsahu",
+                "Sexuální roleplay v Minecraftu",
+                "Furry fandom a jeho skryté kouty",
+                "Čtyřhodinová debata o tom, proč je tvoje waifu nejlepší",
+                "Erekce při čtení Dungeons & Dragons příručky",
+                "Argumentace o kanonickém věku anime postavy",
+                "Tajný účet na OnlyFans sledující cosplayerky",
+                "Toxický LoL hráč s homofobními urážkami",
+                "Vystříkání se do figurky",
+                "Absence sprchy i po upozornění organizátory",
+                "Návykové sledování hentai kategorií, které tě samotného děsí",
+                "Vysvětlování mamince, proč má tvoje figurka odnímatelné části",
+                "Intimní vztah s anime polštářem",
+                "Nejdelší období bez dotyku druhé osoby",
+                "Vytahování se svojí IQ hodnotou v online debatách",
+                "Sběratelská edice časopisu Playboy schovaná za počítačovou literaturou",
+                "Zasmrádlé trenky po víkendovém herním maratonu",
+                "Neschopnost udržet oční kontakt s prodavačkou v GameStopu",
+                "Waifu tapeta na pracovním počítači",
+                "Falešné výmluvy, proč jsi doma během anime convention",
+                "Vyhoření z práce maskované jako gaming time",
+                "Pochybný obsah na záložní flash disku",
+                "Incognito režim jako výchozí nastavení prohlížeče",
+                "Spontánní erekce při zmínce o cosplay",
+                "Diagnóza chronický krk od obrazovky",
+                "Ejakulace při vyslovení názvu oblíbeného anime",
+                "Sbírka 2D prsou seřazená podle velikosti",
+                "Platinová kartička na Pornhubu",
+                "Vysvětlování mamince, že to není fáze",
+                "Virtuální přítelkyně vytvořená pomocí AI",
+                "Pátek večer strávený osamotě v onanistickém maratonu",
+                "Expertní znalost všech kategorií na Pornhubu",
+                "Nákup japonské konverzační panenky na splátky",
+                "Omluvný e-mail následující po opileckém nákupu 18+ figurek",
+                "Neúspěšný pokus vysvětlit rozdíl mezi anime a hentai rodičům",
+                "Šifrovací heslo obsahující název oblíbeného hentai",
+                "Záhadný křupavý ponožka pod postelí",
+                "Falešné údaje o výšce a váze na seznamce pro nerdy",
+                "Argumentace o anatomicky nepřesných proporacích anime postavy",
+                "Náhodný šéf nachytávající tě při sledování nevhodného obsahu",
+                "Diskuse v discord chatu o nejžhavější postavě z Overwatche",
+                "Role adminátora na pochybném subredditu",
+                "Zrušení rande kvůli důležitému updatu oblíbené hry",
+                "Skryté účty na sociálních sítích pro NSFW obsah",
+                "Úzkostlivá panika, když rodiče sahají na tvůj laptop",
+                "Úctyhodná sbírka uměleckých obrázků, které jsi oceňoval",
+                "Okamžitá reakce na slovo ara ara",
+                "Obhajování svého práva být degenerát",
+                "Výdaje za virtuální outfity přesahující měsíční nájem",
+                "Pokusy o splnění fetiše pomocí obrovské sbírky modů",
+                "Automatické doporučení podobného obsahu které tě vyděsilo",
+                "Odborná znalost japonských termínů, které ti brání vysvětlovat rodinným příslušníkům",
+                "Vzpomínka na dobu, kdy jsi náhodou pustil zvuk z porna na plné koule",
+                "Naprosto irelevantní korekce faktů v diskusi o sci-fi",
+                "Únik semene při kontaktu s osobou stejného zájmu",
+                "Expert na hentai, začátečník v reálném sexu",
+                "Sekrety ukryté v Homework složce s trojitým zaheslováním",
+                "Deset tisíc korun investovaných do gacha her",
+                "Vědomosti o specifických fetišových termínech, o kterých normální lidé nemají tušení",
+                "Schopnost rozpoznat hentai umělce podle jediného tahu štětcem",
+                "Vlákno na sociální síti věnované teorii, proč je tvůj ship kanonický",
+                "Specializovaná slovní zásoba pro BDSM, kterou znáš jen z internetu",
+                "Nákupy v sex shopu pomocí rodičovy kreditní karty",
+                "Chronická závislost na klíčových slovech submissive a breedable",
+                "Hodinová analýza sexuálních podtónů v dětském animáku",
+                "Soukromá sbírka NFT s pochybnými obrázky",
+                "Sarkastický komentář následovaný uwu",
+                "Záměrné ignorování osobní hygieny jako forma protestu"
+            ]
+        };
+
+        // Funkce pro načtení karet z JSON
+        function loadCards() {
+            document.getElementById('loading').style.display = 'block';
+            
+            // Simulujeme asynchronní načítání - v reálné aplikaci by zde byl AJAX/fetch
+            setTimeout(function() {
+                blackCards = cardsData.blackCards;
+                whiteCards = cardsData.whiteCards;
+                
+                document.getElementById('loading').style.display = 'none';
+                dealCards();
+            }, 500);
+        }
+
+        // Funkce pro náhodný výběr
+        function getRandomItem(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+
+        // Funkce pro náhodný výběr několika unikátních položek
+        function getRandomItems(array, count) {
+            var shuffled = array.slice();
+            for (var i = shuffled.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var temp = shuffled[i];
+                shuffled[i] = shuffled[j];
+                shuffled[j] = temp;
+            }
+            return shuffled.slice(0, count);
+        }
+
+        // Funkce pro rozdání karet
+        function dealCards() {
+            if (blackCards.length === 0 || whiteCards.length === 0) {
+                loadCards();
+                return;
+            }
+            
+            var blackCardContainer = document.getElementById('blackCardContainer');
+            var whiteCardsContainer = document.getElementById('whiteCardsContainer');
+            var combinedTextContainer = document.getElementById('combinedTextContainer');
+            
+            // Skrýt kombinovaný text při novém rozdání
+            combinedTextContainer.style.display = 'none';
+            
+            // Vyčistit kontejnery
+            blackCardContainer.innerHTML = '';
+            whiteCardsContainer.innerHTML = '';
+            
+            // Vybrat náhodnou černou kartu
+            var randomBlackCard = getRandomItem(blackCards);
+            var blackCardElement = document.createElement('div');
+            blackCardElement.className = 'card black-card';
+            blackCardElement.textContent = randomBlackCard;
+            blackCardContainer.appendChild(blackCardElement);
+            
+            // Vybrat 5 náhodných bílých karet
+            var randomWhiteCards = getRandomItems(whiteCards, 5);
+            for (var i = 0; i < randomWhiteCards.length; i++) {
+                var whiteCardElement = document.createElement('div');
+                whiteCardElement.className = 'card white-card';
+                whiteCardElement.textContent = randomWhiteCards[i];
+                whiteCardElement.onclick = createClickHandler(whiteCardElement);
+                whiteCardsContainer.appendChild(whiteCardElement);
+            }
+        }
+
+        function createClickHandler(cardElement) {
+            return function() {
+                // Zrušit výběr všech karet
+                var allWhiteCards = document.querySelectorAll('.white-card');
+                for (var i = 0; i < allWhiteCards.length; i++) {
+                    allWhiteCards[i].style.transform = '';
+                    allWhiteCards[i].style.boxShadow = '0 0 10px rgba(0, 255, 0, 0.3)';
+                }
+                
+                // Označit vybranou kartu
+                cardElement.style.transform = 'translateY(-15px)';
+                cardElement.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.8)';
+                
+                // Získat text z černé karty
+                var blackCardText = document.querySelector('.black-card').textContent;
+                
+                // Získat text z vybrané bílé karty
+                var whiteCardText = cardElement.textContent;
+                
+                // Vytvořit kombinovaný text
+                var combinedText = '';
+                if (blackCardText.includes('__________')) {
+                    // Nahradit podtržítka textem z bílé karty
+                    combinedText = blackCardText.replace('__________', whiteCardText.toLowerCase());
+                } else {
+                    // Připojit text z bílé karty k černé kartě
+                    combinedText = blackCardText + ' ' + whiteCardText.toLowerCase();
+                }
+                
+                // Zobrazit kombinovaný text
+                var combinedTextContainer = document.getElementById('combinedTextContainer');
+                combinedTextContainer.textContent = combinedText;
+                combinedTextContainer.style.display = 'block';
+                combinedTextContainer.style.animation = 'pulse 2s infinite';
+            };
+        }
+
+        // Základní inicializace: přidat event listenery a rozdat karty
+        window.onload = function() {
+            document.getElementById('dealButton').onclick = dealCards;
+            loadCards(); // Načíst karty a následně rozdat
+        };
+    </script>
+</body>
+</html>
